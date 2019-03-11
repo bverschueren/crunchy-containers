@@ -137,8 +137,14 @@ function initdb_logic() {
 }
 
 function check_for_restore() {
+    export BACKUP_ARCHIVE_TYPES="tar tar.gz"
     echo_info "Checking for restore.."
     ls -l /backup
+    for extension in $BACKUP_ARCHIVE_TYPES; do
+        if [ -f /backup/$BACKUP_PATH/base.${extension} ]; then
+            extract_backup base ${extension} /backup/$BACKUP_PATH/
+        fi
+    done
     if [ ! -f /backup/$BACKUP_PATH/postgresql.conf ]; then
         echo_info "No backup file found."
         initdb_logic
@@ -152,6 +158,24 @@ function check_for_restore() {
         fi
     fi
 }
+
+function extract_backup() {
+    src=$1
+    extension=$2
+    dst=$3
+    echo_info "Extracting backup /backup/$BACKUP_PATH/${src}.${extension}"
+    tar -xf /backup/$BACKUP_PATH/${src}.${extension} -C ${dst}
+    if [ $src == "base" -a -f /backup/$BACKUP_PATH/tablespace_map ]; then
+    # if we're extracting base.tar(.gz)?, check if there is a tablespace_map
+        while read line; do
+            tbspc_map=(${line})
+            echo_info "Handling additional tablespace /backup/$BACKUP_PATH/${tbspc_map[0]}.${extension}"
+            dir_check_err ${tbspc_map[1]}
+            extract_backup ${tbspc_map[0]} ${extension} ${tbspc_map[1]}
+        done < /backup/$BACKUP_PATH/tablespace_map
+    fi
+}
+
 function check_for_pitr() {
     echo_info "Checking for PITR WAL files to recover with.."
     if [ "$(ls -A /recover)" ]; then
