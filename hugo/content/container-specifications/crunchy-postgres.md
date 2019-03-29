@@ -65,6 +65,7 @@ The crunchy-postgres Docker image contains the following packages (versions vary
 **PGBACKREST**|false| Set this value to `true` in order to enable and initialize pgBackRest in the container
 **BACKREST_SKIP_CREATE_STANZA**|false| Set this value to `true` in order to skip the configuration check and the automatic creation of a stanza while initializing pgBackRest in the container
 **PG_CTL_OPTS**|None| Set this value to supply custom `pg_ctl` options (ex: `-c shared_preload_libraries=pgaudit`) during the initialization phase the container start.
+**PG_PRE_RESTORE_HOOK**|None|Feeds the backup-file as STDIN to the (sequence of piped) commands passed in here. This is useful when the backup-file is not in a format to restore from  (e.g. `BACKUP_OPTS="--gzip"`).
 
 ## Volumes
 

@@ -140,7 +140,17 @@ function initdb_logic() {
 function check_for_restore() {
     echo_info "Checking for restore.."
     ls -l /backup
-    if [ ! -f /backup/$BACKUP_PATH/postgresql.conf ]; then
+    if  ls -l /backup/$BACKUP_PATH/base.* 2>/dev/null && [[ ! -z $PG_PRE_RESTORE_HOOK ]]; then
+        pre_restore_hook $(ls -1 /backup/$BACKUP_PATH/base.*|head -1) $PGDATA
+        if [[ -f /backup/$BACKUP_PATH/tablespace_map ]]; then
+             while read line; do
+                tbspc_map=(${line})
+                echo_info "Handling additional tablespace /backup/$(ls -1 /backup/$BACKUP_PATH/${tbspc_map[0]}*|head -1)"
+                mkdir -p ${tbspc_map[1]}
+                pre_restore_hook $(ls -1 /backup/$BACKUP_PATH/${tbspc_map[0]}*|head -1) ${tbspc_map[1]}
+            done < /backup/$BACKUP_PATH/tablespace_map
+        fi
+    elif [ ! -f /backup/$BACKUP_PATH/postgresql.conf ]; then
         echo_info "No backup file found."
         initdb_logic
     else

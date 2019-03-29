@@ -60,6 +60,12 @@ then
 fi
 
 BACKUP_FILE="${BACKUP_DIR?}/$(ls ${BACKUP_DIR?} | head -n 1)"
+if [[ ! -z $PG_PRE_RESTORE_HOOK ]]; then
+	RESTORE_WORKDIR=$(mktemp -d /${PG_RESTORE_PATH:-/tmp}/pgrestore.XXXXXXXX)
+	PG_PRE_RESTORE_HOOK+=" 1>dump"
+	pre_restore_hook ${BACKUP_FILE?} ${RESTORE_WORKDIR}
+	BACKUP_FILE="${RESTORE_WORKDIR?}/$(ls ${RESTORE_WORKDIR?} | head -n 1)"
+fi
 if [[ ! -f ${BACKUP_FILE?} ]] && [[ ! -d ${BACKUP_FILE?} ]]
 then
     echo_err "Backup file does not exist: ${BACKUP_FILE?}"

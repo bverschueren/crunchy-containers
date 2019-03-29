@@ -170,3 +170,20 @@ function err_check {
         exit ${RC?}
     fi
 }
+
+function pre_restore_hook() {
+    backup_src=$1
+    backup_dst=${2:-$(dirname $backup_src)}
+    pushd $backup_dst
+
+    cmd="cat $backup_src | ${PG_PRE_RESTORE_HOOK}"
+
+    echo_info "Running pre_restore_hook: ${cmd?}"
+    set +e
+    set -o pipefail
+    eval $cmd >/tmp/pre_restore_hook.stdout 2>/tmp/pre_restore_hook.stderr
+    err_check "$?" "Processing ${backup_src?}" \
+            "Failed to process PG_PRE_RESTORE_HOOK: \n$(cat /tmp/pre_restore_hook.stderr)"
+    set -e
+    popd
+}
